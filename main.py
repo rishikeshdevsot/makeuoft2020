@@ -1,4 +1,5 @@
 import argparse
+from cv2 import *
 
 def upload_blob(bucket_name, source_file_name, destination_blob_name):
     from google.cloud import storage
@@ -25,6 +26,8 @@ def detect_faces(path):
     """Detects faces in an image."""
     from google.cloud import vision
     import io
+
+    upload_blob("makeuoftimagesinput", path, "output.jpg")
     client = vision.ImageAnnotatorClient()
 
     # [START vision_python_migration_face_detection]
@@ -37,7 +40,7 @@ def detect_faces(path):
 
     response = client.face_detection(image=image)
     faces = response.face_annotations
-
+    
 
     # Names of likelihood from google.cloud.vision.enums
     likelihood_name = ('UNKNOWN', 'VERY_UNLIKELY', 'UNLIKELY', 'POSSIBLE',
@@ -70,6 +73,9 @@ def detect_safe_search(path):
     """Detects unsafe features in the file."""
     from google.cloud import vision
     import io
+
+    #upload_blob("makeuoftimagesinput", path, "output.jpg")
+
     client = vision.ImageAnnotatorClient()
 
     # [START vision_python_migration_safe_search_detection]
@@ -102,23 +108,30 @@ def detect_safe_search(path):
 # [END vision_safe_search_detection]
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    subparsers = parser.add_subparsers(dest='command')
+    while(True):
+        # initialize the camera
+        cam = VideoCapture(0)   # 0 -> index of camera
+        s, img = cam.read()
+        if s:    # frame captured without any errors
+            imwrite("Resources/output.jpg",img)
+        '''
+        parser = argparse.ArgumentParser(
+            description=__doc__,
+            formatter_class=argparse.RawDescriptionHelpFormatter)
+        subparsers = parser.add_subparsers(dest='command')
 
-    detect_faces_parser = subparsers.add_parser(
-        'faces', help=detect_faces.__doc__)
-    detect_faces_parser.add_argument('path')
+        detect_faces_parser = subparsers.add_parser(
+            'faces', help=detect_faces.__doc__)
+        detect_faces_parser.add_argument('path')
 
-    safe_search_parser = subparsers.add_parser(
-        'safe-search', help=detect_safe_search.__doc__)
-    safe_search_parser.add_argument('path')
+        safe_search_parser = subparsers.add_parser(
+            'safe-search', help=detect_safe_search.__doc__)
+        safe_search_parser.add_argument('path')
+        args = parser.parse_args()
+        '''
+        f = open("output.txt", "w")
+        f.close()
+        detect_faces("./Resources/output.jpg")
+        detect_safe_search("./Resources/output.jpg")
 
-    args = parser.parse_args()
-    f = open("output.txt", "w")
-    f.close()
-    detect_faces(args.path)
-    detect_safe_search(args.path)
-
-    upload_blob("makeuoftimagesoutput", "output.txt", "facesandracy.txt")
+        upload_blob("makeuoftimagesoutput", "output.txt", "facesandracy.txt")
