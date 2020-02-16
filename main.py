@@ -1,5 +1,6 @@
 import argparse
 from cv2 import *
+import serial
 
 def upload_blob(bucket_name, source_file_name, destination_blob_name):
     from google.cloud import storage
@@ -90,7 +91,7 @@ def detect_safe_search(path):
     # Names of likelihood from google.cloud.vision.enums
     likelihood_name = ('UNKNOWN', 'VERY_UNLIKELY', 'UNLIKELY', 'POSSIBLE',
                        'LIKELY', 'VERY_LIKELY')
-    f = open("output.txt", "a+")
+    f = open("output.txt", "a")
     f.write('Safe search:\n')
 
     f.write('adult: {}\n'.format(likelihood_name[safe.adult]))
@@ -106,29 +107,56 @@ def detect_safe_search(path):
                 response.error.message))
     # [END vision_python_migration_safe_search_detection]
 # [END vision_safe_search_detection]
+def firebaseUpload():
+    from firebase import firebase
+    import requests
+    from google.cloud import storage
+    from google.cloud import pubsub_v1
+    import time
 
+
+    firebase = firebase.FirebaseApplication("https://makeuoft2020-268400.firebaseio.com/", None)
+
+
+    #################POST
+    print("now going to send push notification")
+    # defining the api-endpoint  
+    API_ENDPOINT = "https://exp.host/--/api/v2/push/send"
+
+    # data to be sent to api 
+    data = {
+    "to": "ExponentPushToken[uh3CDsJFxY_vTcV_n0wUHM]",
+    "title":"hello",
+    "body": "world"
+    } 
+
+    # sending post request and saving response as response object 
+    r = requests.post(url = API_ENDPOINT, data = data)
 if __name__ == '__main__':
-    while(True):
+    COM1 = 'COM7'# /dev/ttyACM0 (Linux)
+    COM2 = 'COM5'
+    BAUD = 115200
+    intruder = False
+    ser1 = serial.Serial(COM1, BAUD, timeout = 0)
+    #ser2 = serial.Serial(COM2, BAUD)
+    print("before ")
+    s1 = ser1.read(1)
+    print("after ")
+    #s2 = ser2.read(1)
+    if((s1 == "9")):#or(s2 == "9")):
+        intruder = True
+        print("INTRUDER!!!\n")
+    else:
+        print("Didn't go in")
+
+    while(intruder):
         # initialize the camera
+        firebaseUpload()
         cam = VideoCapture(0)   # 0 -> index of camera
         s, img = cam.read()
         if s:    # frame captured without any errors
             imwrite("Resources/output.jpg",img)
-        '''
-        parser = argparse.ArgumentParser(
-            description=__doc__,
-            formatter_class=argparse.RawDescriptionHelpFormatter)
-        subparsers = parser.add_subparsers(dest='command')
-
-        detect_faces_parser = subparsers.add_parser(
-            'faces', help=detect_faces.__doc__)
-        detect_faces_parser.add_argument('path')
-
-        safe_search_parser = subparsers.add_parser(
-            'safe-search', help=detect_safe_search.__doc__)
-        safe_search_parser.add_argument('path')
-        args = parser.parse_args()
-        '''
+            
         f = open("output.txt", "w")
         f.close()
         detect_faces("./Resources/output.jpg")
